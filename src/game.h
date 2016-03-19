@@ -105,9 +105,6 @@ enum {
 	GAME_COMMAND_FLAG_NETWORKED = (1 << 31) // Game command is coming from network
 };
 
-
-
-
 typedef void (GAME_COMMAND_POINTER)(int* eax, int* ebx, int* ecx, int* edx, int* esi, int* edi, int* ebp);
 
 typedef void (GAME_COMMAND_CALLBACK_POINTER)(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
@@ -153,5 +150,8 @@ void game_autosave();
 void game_convert_strings_to_utf8();
 void game_convert_strings_to_rct2(rct_s6_data *s6);
 void game_fix_save_vars();
+void game_undo_set(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
+void game_undo_invalidate();
+void game_undo();
 
 #endif

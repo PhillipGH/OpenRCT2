@@ -65,6 +65,12 @@ int gGameSpeed = 1;
 float gDayNightCycle = 0;
 bool gInUpdateCode = false;
 
+typedef struct {
+	uint32 eax, ebx, ecx, edx, esi, edi, ebp;
+	uint8 valid;
+} rct_game_undo_command;
+rct_game_undo_command game_undo_command;
+
 extern void game_command_callback_place_banner(int eax, int ebx, int ecx, int edx, int esi, int edi, int ebp);
 
 GAME_COMMAND_CALLBACK_POINTER* game_command_callback = 0;
@@ -110,6 +116,29 @@ void game_reduce_game_speed()
 	if (gGameSpeed == 7)
 		gGameSpeed = 4;
 	window_invalidate_by_class(WC_TOP_TOOLBAR);
+}
+
+void game_undo_set(rct_game_undo_command command) {
+	game_undo_command = command;
+}
+
+void game_undo() {
+	if (game_undo_command.valid) {
+		game_do_command(
+			game_undo_command.eax,
+			game_undo_command.ebx,
+			game_undo_command.ecx,
+			game_undo_command.edx,
+			game_undo_command.esi,
+			game_undo_command.edi,
+			game_undo_command.ebp
+		);
+	}
+	game_undo_invalidate();
+}
+
+void game_undo_invalidate() {
+	game_undo_command.valid = 0;
 }
 
 /**

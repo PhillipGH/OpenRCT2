@@ -779,6 +779,18 @@ void game_command_remove_scenery(int* eax, int* ebx, int* ecx, int* edx, int* es
 			network_set_player_last_action_coord(network_get_player_index(game_command_playerid), coord);
 		}
 
+		if (flags & GAME_COMMAND_FLAG_APPLY && !(flags & GAME_COMMAND_FLAG_5) && network_get_current_player_id() == game_command_playerid) {
+			game_undo_set(
+				x,
+				flags,
+				y,
+				scenery_type,
+				GAME_COMMAND_PLACE_SCENERY,
+				0,//RCT2_GLOBAL(RCT2_ADDRESS_SCENERY_ROTATION, uint8) | (parameter_3 & 0xFFFF0000),
+				base_height
+				);
+		}
+
 		map_invalidate_tile_full(x, y);
 		map_element_remove(map_element);
 	}
@@ -3008,6 +3020,17 @@ void game_command_place_scenery(int* eax, int* ebx, int* ecx, int* edx, int* esi
 								map_invalidate_tile_full(x, y);
 								if(scenery_entry->small_scenery.flags & SMALL_SCENERY_FLAG_ANIMATED){
 									map_animation_create(2, x, y, new_map_element->base_height);
+								}
+								if (flags & GAME_COMMAND_FLAG_APPLY && !(flags & GAME_COMMAND_FLAG_5) && network_get_current_player_id() == game_command_playerid) {
+									game_undo_set(
+										x,
+										(new_map_element->type << 8) | 1,
+										y,
+										(new_map_element->properties.scenery.type << 8) | new_map_element->base_height,
+										GAME_COMMAND_REMOVE_SCENERY,
+										0,
+										0
+										);
 								}
 							}
 							*ebx = (scenery_entry->small_scenery.price * 10) + RCT2_GLOBAL(0x00F64F26, money32);

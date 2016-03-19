@@ -356,8 +356,21 @@ static money32 footpath_place_real(int type, int x, int y, int z, int slope, int
 	footpath_provisional_remove();
 	mapElement = map_get_footpath_element_slope((x / 32), (y / 32), z, slope);
 	if (mapElement == NULL) {
+		if (flags & GAME_COMMAND_FLAG_APPLY && !(flags & GAME_COMMAND_FLAG_5) && (network_get_current_player_id() == game_command_playerid || game_command_playerid == -1))
+			game_undo_set(x, flags, y, z, GAME_COMMAND_REMOVE_PATH, 0, 0);
 		return footpath_element_insert(type, x, y, z, slope, flags, pathItemType);
 	} else {
+		if (flags & GAME_COMMAND_FLAG_APPLY && !(flags & GAME_COMMAND_FLAG_5)) {
+			if (network_get_current_player_id() == game_command_playerid || game_command_playerid == -1)
+			{
+				printf("curr: %d\n", network_get_current_player_id());
+				printf("pId: %d\n", game_command_playerid);
+				int oldType = (mapElement->type & 1) << 7 | ((mapElement->properties.path.type & 0xF0) >> 4);
+				if (oldType != type) {
+					game_undo_set(x, slope << 8 | flags, y, oldType << 8 | z, GAME_COMMAND_PLACE_PATH, 0, 0);
+				}
+			}
+		}
 		return footpath_element_update(x, y, mapElement, type, flags, pathItemType);
 	}
 }
@@ -375,6 +388,7 @@ void remove_banners_at_element(int x, int y, rct_map_element* mapElement){
 		mapElement--;
 	}
 }
+
 
 money32 footpath_remove_real(int x, int y, int z, int flags)
 {
@@ -408,6 +422,11 @@ money32 footpath_remove_real(int x, int y, int z, int flags)
 			network_set_player_last_action_coord(network_get_player_index(game_command_playerid), coord);
 		}
 
+		if (!(flags & GAME_COMMAND_FLAG_5) && network_get_current_player_id() == game_command_playerid) {
+			uint8 type = mapElement->properties.path.type;
+			game_undo_set(x, ( /* slope */ (type & 7) << 8) | flags, y, /* type */ ((mapElement->type & 1) << 15) | ((type & 0xF0) << 4) |z, GAME_COMMAND_PLACE_PATH, 0, 0);
+		}
+
 		RCT2_GLOBAL(0x00F3EFF4, uint32) = 0x00F3EFF8;
 		remove_banners_at_element(x, y, mapElement);
 		footpath_remove_edges_at(x, y, mapElement);
@@ -415,6 +434,7 @@ money32 footpath_remove_real(int x, int y, int z, int flags)
 		map_element_remove(mapElement);
 		sub_6A759F();
 	}
+
 
 	return (flags & (1 << 5)) || (RCT2_GLOBAL(RCT2_ADDRESS_PARK_FLAGS, uint32) & PARK_FLAGS_NO_MONEY) ? 0 : -MONEY(10,00);
 }
